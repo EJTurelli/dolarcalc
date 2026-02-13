@@ -37,24 +37,30 @@
         transform: translateY(0);
       }
     }
+
+    /* Evita que el zoom automático de iOS rompa el diseño en inputs */
+    input {
+      font-size: 16px;
+    }
   </style>
 </head>
 
 <body
-  class="bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-gray-100 min-h-screen flex items-center justify-center p-4">
+  class="bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-gray-100 min-h-screen flex items-center justify-center p-2 sm:p-4">
 
   <div
-    class="max-w-xl w-full bg-white dark:bg-slate-900 rounded-[3rem] p-8 md:p-10 shadow-2xl border border-gray-100 dark:border-slate-800 transition-all"
+    class="max-w-xl w-full bg-white dark:bg-slate-900 rounded-[2rem] sm:rounded-[3rem] p-5 sm:p-10 shadow-2xl border border-gray-100 dark:border-slate-800 transition-all"
     x-cloak>
 
-    <div class="flex justify-between items-center mb-8">
+    <div class="flex justify-between items-center mb-6 sm:mb-8">
       <div>
-        <h1 class="text-xl font-black tracking-tighter text-indigo-600 dark:text-indigo-400 uppercase">DolarCalc</h1>
-        <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Standalone Tool</p>
+        <h1 class="text-lg sm:text-xl font-black tracking-tighter text-indigo-600 dark:text-indigo-400 uppercase">
+          DolarCalc</h1>
+        <p class="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase tracking-widest">Standalone Tool</p>
       </div>
 
       <button @click="toggleDarkMode()"
-        class="p-3 rounded-2xl bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-yellow-400 hover:scale-110 transition-all focus:outline-none">
+        class="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-yellow-400 transition-all">
         <template x-if="!darkMode">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -70,53 +76,55 @@
       </button>
     </div>
 
-    <div class="space-y-6">
+    <div class="space-y-4 sm:space-y-6">
       <div
-        class="bg-gray-50 dark:bg-slate-800/50 rounded-[2.5rem] p-6 border-2 border-transparent focus-within:border-indigo-500/20 transition-all">
-        <div class="flex justify-between px-4 mb-2">
+        class="bg-gray-50 dark:bg-slate-800/50 rounded-[1.5rem] sm:rounded-[2.5rem] p-5 sm:p-6 border-2 border-transparent focus-within:border-indigo-500/20 transition-all">
+        <div class="flex justify-between px-2 mb-2">
           <select x-model="calcCurrency"
-            class="bg-transparent font-black text-slate-400 dark:text-slate-500 outline-none cursor-pointer">
+            class="bg-transparent font-black text-xs sm:text-sm text-slate-400 dark:text-slate-500 outline-none cursor-pointer">
             <option value="USD">USD ⮕ ARS</option>
             <option value="ARS">ARS ⮕ USD</option>
           </select>
         </div>
-        <div class="flex items-center justify-between gap-4">
-          <span class="text-3xl font-black text-gray-300 dark:text-slate-600 transition-colors"
+        <div class="flex items-center justify-between gap-2 sm:gap-4">
+          <span class="text-xl sm:text-3xl font-black text-gray-300 dark:text-slate-600"
             x-text="calcCurrency === 'USD' ? 'u$s' : '$'"></span>
-
           <input type="text" :value="formatInput(calcInput)" @input="updateCalcInput($event)"
             @keydown="filterKey($event)"
-            class="w-full bg-transparent text-right text-6xl font-black outline-none text-slate-900 dark:text-white tracking-tighter placeholder-gray-200 dark:placeholder-slate-700"
+            class="w-full bg-transparent text-right text-4xl sm:text-6xl font-black outline-none text-slate-900 dark:text-white tracking-tighter placeholder-gray-200 dark:placeholder-slate-700"
             inputmode="decimal" placeholder="0">
         </div>
       </div>
 
-      <div class="flex gap-2 p-1.5 bg-gray-100 dark:bg-slate-800 rounded-2xl">
+      <div class="flex gap-1.5 p-1 bg-gray-100 dark:bg-slate-800 rounded-xl sm:rounded-2xl">
         <template x-for="m in ['venta', 'compra', 'promedio']">
           <button @click="calcMode = m"
             :class="calcMode === m ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-300' : 'text-gray-500 dark:text-gray-400'"
-            class="flex-1 py-3 rounded-xl text-xs font-bold transition-all uppercase" x-text="m"></button>
+            class="flex-1 py-2 sm:py-3 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition-all uppercase"
+            x-text="m"></button>
         </template>
       </div>
 
-      <div class="space-y-3">
+      <div class="space-y-2 sm:space-y-3">
         <template
           x-for="tipo in [{id:'blue', n:'Dólar Blue'}, {id:'mep', n:'Dólar MEP'}, {id:'cripto', n:'Dólar Cripto'}, {id:'oficial', n:'Dólar Oficial'}]">
           <div
-            class="group relative flex justify-between items-center p-6 bg-gray-50 dark:bg-slate-800/30 rounded-[2rem] border border-transparent hover:border-indigo-500/30 transition-all">
-            <div>
-              <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1"
+            class="group relative flex justify-between items-center p-4 sm:p-6 bg-gray-50 dark:bg-slate-800/30 rounded-[1.2rem] sm:rounded-[2rem] border border-transparent hover:border-indigo-500/30 transition-all overflow-hidden">
+            <div class="min-w-0 flex-1">
+              <p class="text-[8px] sm:text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-0.5"
                 x-text="tipo.n"></p>
-              <p class="text-[10px] font-bold text-indigo-400" x-text="'Ref: ' + format(getPrice(tipo.id))"></p>
+              <p class="text-[9px] sm:text-[10px] font-bold text-indigo-400 truncate"
+                x-text="'Ref: ' + format(getPrice(tipo.id))"></p>
             </div>
-            <div class="flex items-center gap-3">
-              <p class="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">
-                <span class="text-sm font-medium text-gray-400 mr-1"
+            <div class="flex items-center gap-2 sm:gap-3 ml-2">
+              <p
+                class="text-xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tighter whitespace-nowrap">
+                <span class="text-[10px] sm:text-sm font-medium text-gray-400 mr-0.5"
                   x-text="calcCurrency === 'USD' ? '$' : 'u$s'"></span>
                 <span x-text="doCalculate(getPrice(tipo.id))"></span>
               </p>
               <button @click="copyToClipboard(tipo.id, tipo.n)"
-                class="p-2 rounded-lg bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity hover:text-indigo-600 dark:hover:text-indigo-400">
+                class="hidden sm:block p-2 rounded-lg bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity hover:text-indigo-600 dark:hover:text-indigo-400">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                   stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -124,15 +132,17 @@
                 </svg>
               </button>
             </div>
+            <div @click="copyToClipboard(tipo.id, tipo.n)" class="sm:hidden absolute inset-0 cursor-pointer"></div>
 
             <div x-show="copiedId === tipo.id" x-transition
-              class="absolute right-6 -top-2 bg-indigo-600 text-white text-[9px] font-bold px-2 py-1 rounded shadow-lg copy-feedback">
+              class="absolute right-4 top-1 bg-indigo-600 text-white text-[8px] font-bold px-2 py-0.5 rounded shadow-lg copy-feedback">
               COPIADO!</div>
           </div>
         </template>
       </div>
 
-      <p class="text-center text-[11px] font-bold text-gray-400 dark:text-slate-600 uppercase tracking-[0.2em] pt-4">
+      <p
+        class="text-center text-[9px] sm:text-[11px] font-bold text-gray-400 dark:text-slate-600 uppercase tracking-[0.2em] pt-2">
         Sincronizado con <a rel="noopener" href="https://dolarapi.com/docs/argentina/" target="_blank">DolarApi.com</a>:
         <span x-text="lastUpdate"></span>
       </p>

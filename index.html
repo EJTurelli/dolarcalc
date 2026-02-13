@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es" x-data="dolarCalc()" :class="{ 'dark': darkMode }">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DolarCalc Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = { darkMode: 'class' }
+  </script>
+  <style>
+    [x-cloak] {
+      display: none !important;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      transition: background-color 0.3s ease;
+    }
+
+    /* Animación para el feedback de copiado */
+    .copy-feedback {
+      animation: fadeInUp 0.3s ease-out;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(5px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+
+<body
+  class="bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-gray-100 min-h-screen flex items-center justify-center p-4">
+
+  <div
+    class="max-w-xl w-full bg-white dark:bg-slate-900 rounded-[3rem] p-8 md:p-10 shadow-2xl border border-gray-100 dark:border-slate-800 transition-all"
+    x-cloak>
+
+    <div class="flex justify-between items-center mb-8">
+      <div>
+        <h1 class="text-xl font-black tracking-tighter text-indigo-600 dark:text-indigo-400 uppercase">DolarCalc</h1>
+        <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Standalone Tool</p>
+      </div>
+
+      <button @click="toggleDarkMode()"
+        class="p-3 rounded-2xl bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-yellow-400 hover:scale-110 transition-all focus:outline-none">
+        <template x-if="!darkMode">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
+        </template>
+        <template x-if="darkMode">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 3v1m0 18v1m9-9h1M3 12H1m15.364-6.364l.707-.707M6.343 17.657l-.707-.707m12.728 0l-.707.707M6.343 6.343l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+        </template>
+      </button>
+    </div>
+
+    <div class="space-y-6">
+      <div
+        class="bg-gray-50 dark:bg-slate-800/50 rounded-[2.5rem] p-6 border-2 border-transparent focus-within:border-indigo-500/20 transition-all">
+        <div class="flex justify-between px-4 mb-2">
+          <select x-model="calcCurrency"
+            class="bg-transparent font-black text-slate-400 dark:text-slate-500 outline-none cursor-pointer">
+            <option value="USD">USD ⮕ ARS</option>
+            <option value="ARS">ARS ⮕ USD</option>
+          </select>
+        </div>
+        <div class="flex items-center justify-between gap-4">
+          <span class="text-3xl font-black text-gray-300 dark:text-slate-600 transition-colors"
+            x-text="calcCurrency === 'USD' ? 'u$s' : '$'"></span>
+
+          <input type="text" :value="formatInput(calcInput)" @input="updateCalcInput($event)"
+            @keydown="filterKey($event)"
+            class="w-full bg-transparent text-right text-6xl font-black outline-none text-slate-900 dark:text-white tracking-tighter placeholder-gray-200 dark:placeholder-slate-700"
+            inputmode="decimal" placeholder="0">
+        </div>
+      </div>
+
+      <div class="flex gap-2 p-1.5 bg-gray-100 dark:bg-slate-800 rounded-2xl">
+        <template x-for="m in ['venta', 'compra', 'promedio']">
+          <button @click="calcMode = m"
+            :class="calcMode === m ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-300' : 'text-gray-500 dark:text-gray-400'"
+            class="flex-1 py-3 rounded-xl text-xs font-bold transition-all uppercase" x-text="m"></button>
+        </template>
+      </div>
+
+      <div class="space-y-3">
+        <template
+          x-for="tipo in [{id:'blue', n:'Dólar Blue'}, {id:'mep', n:'Dólar MEP'}, {id:'cripto', n:'Dólar Cripto'}, {id:'oficial', n:'Dólar Oficial'}]">
+          <div
+            class="group relative flex justify-between items-center p-6 bg-gray-50 dark:bg-slate-800/30 rounded-[2rem] border border-transparent hover:border-indigo-500/30 transition-all">
+            <div>
+              <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1"
+                x-text="tipo.n"></p>
+              <p class="text-[10px] font-bold text-indigo-400" x-text="'Ref: ' + format(getPrice(tipo.id))"></p>
+            </div>
+            <div class="flex items-center gap-3">
+              <p class="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">
+                <span class="text-sm font-medium text-gray-400 mr-1"
+                  x-text="calcCurrency === 'USD' ? '$' : 'u$s'"></span>
+                <span x-text="doCalculate(getPrice(tipo.id))"></span>
+              </p>
+              <button @click="copyToClipboard(tipo.id, tipo.n)"
+                class="p-2 rounded-lg bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity hover:text-indigo-600 dark:hover:text-indigo-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                </svg>
+              </button>
+            </div>
+
+            <div x-show="copiedId === tipo.id" x-transition
+              class="absolute right-6 -top-2 bg-indigo-600 text-white text-[9px] font-bold px-2 py-1 rounded shadow-lg copy-feedback">
+              COPIADO!</div>
+          </div>
+        </template>
+      </div>
+
+      <p class="text-center text-[11px] font-bold text-gray-400 dark:text-slate-600 uppercase tracking-[0.2em] pt-4">
+        Sincronizado: <span x-text="lastUpdate"></span>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    function dolarCalc() {
+      return {
+        darkMode: localStorage.getItem('dolarDash_dark') === 'true',
+        datos: {},
+        lastUpdate: '--:--:--',
+        calcInput: 100,
+        calcCurrency: 'USD',
+        calcMode: 'promedio',
+        copiedId: null,
+
+        async init() {
+          await this.updateData();
+          setInterval(() => this.updateData(), 60000);
+        },
+
+        toggleDarkMode() {
+          this.darkMode = !this.darkMode;
+          localStorage.setItem('dolarDash_dark', this.darkMode);
+        },
+
+        async updateData() {
+          try {
+            const [d, c] = await Promise.all([
+              fetch('https://dolarapi.com/v1/dolares').then(r => r.json()),
+              fetch('https://dolarapi.com/v1/dolares/cripto').then(r => r.json())
+            ]);
+            let nuevoEstado = {};
+            d.forEach(item => {
+              const key = item.casa === 'bolsa' ? 'mep' : item.casa;
+              nuevoEstado[key] = item;
+            });
+            nuevoEstado['cripto'] = c;
+            this.datos = nuevoEstado;
+
+            const ahora = new Date();
+            const f = (n) => n.toString().padStart(2, '0');
+            this.lastUpdate = `${f(ahora.getDate())}/${f(ahora.getMonth() + 1)} ${f(ahora.getHours())}:${f(ahora.getMinutes())}:${f(ahora.getSeconds())}`;
+          } catch (e) { console.error(e); }
+        },
+
+        filterKey(e) {
+          const allowedKeys = ['Backspace', 'ArrowLeft', 'ArrowRight', 'Tab', 'Delete', 'Enter', ',', '.'];
+          const isNumber = /[0-9]/.test(e.key);
+
+          // Si presiona punto, lo convertimos visualmente a coma para el usuario argentino
+          if (e.key === '.') {
+            e.preventDefault();
+            if (!e.target.value.includes(',')) {
+              e.target.value += ',';
+              // Disparamos el evento input manualmente para que Alpine se entere
+              e.target.dispatchEvent(new Event('input'));
+            }
+            return;
+          }
+
+          // Bloqueo de segunda coma
+          if (e.key === ',' && e.target.value.includes(',')) {
+            e.preventDefault();
+            return;
+          }
+
+          if (!isNumber && !allowedKeys.includes(e.key)) {
+            e.preventDefault();
+          }
+        },
+
+        format(val) {
+          return val ? `$${val.toLocaleString('es-AR', { minimumFractionDigits: 2 })}` : '--';
+        },
+
+        formatInput(val) {
+          if (val === null || val === undefined || val === '') return '';
+          // Formateamos como número local sin símbolo de moneda
+          return val.toLocaleString('es-AR', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2
+          });
+        },
+
+        updateCalcInput(e) {
+          let el = e.target;
+          let originalValue = el.value;
+
+          // Limpieza profunda: solo números y UNA coma
+          let cleanValue = originalValue.replace(/[^0-9,]/g, '');
+          const parts = cleanValue.split(',');
+          if (parts.length > 2) cleanValue = parts[0] + ',' + parts.slice(1).join('');
+
+          // Guardar el valor numérico real para cálculos (usando punto decimal)
+          const numericString = cleanValue.replace(',', '.');
+          this.calcInput = cleanValue === '' || cleanValue === ',' ? 0 : parseFloat(numericString);
+
+          // Formatear la parte entera con puntos de miles para la vista
+          let formattedValue = parts[0];
+          if (formattedValue.length > 0) {
+            // Convertimos a número y formateamos, pero manteniendo el string si es solo "0"
+            let num = parseInt(formattedValue.replace(/\./g, ''), 10);
+            if (!isNaN(num)) {
+              formattedValue = num.toLocaleString('es-AR');
+            }
+          }
+
+          // Re-ensamblar el valor con la parte decimal
+          let finalDisplay = formattedValue;
+          if (parts.length > 1) {
+            finalDisplay += ',' + parts[1].slice(0, 2); // Limitamos a 2 decimales
+          }
+
+          // Solo actualizamos el DOM si el valor cambió
+          // Esto evita que el cursor salte erráticamente
+          if (el.value !== finalDisplay) {
+            el.value = finalDisplay;
+          }
+        },
+
+        getPrice(tipo) {
+          const d = this.datos[tipo];
+          if (!d) return 0;
+          if (this.calcMode === 'venta') return d.venta;
+          if (this.calcMode === 'compra') return d.compra;
+          return (d.venta + d.compra) / 2;
+        },
+
+        doCalculate(precio) {
+          if (!precio) return '0,00';
+          const res = this.calcCurrency === 'USD' ? this.calcInput * precio : this.calcInput / precio;
+          return res.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        },
+
+        copyToClipboard(id, nombre) {
+          const precio = this.getPrice(id);
+          const resultado = this.doCalculate(precio);
+          const txt = `${resultado}`;
+
+          navigator.clipboard.writeText(txt).then(() => {
+            this.copiedId = id;
+            setTimeout(() => { this.copiedId = null; }, 2000);
+          });
+        }
+      }
+    }
+  </script>
+</body>
+
+</html>

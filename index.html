@@ -282,9 +282,7 @@
         copyToClipboard(id, nombre) {
           const precio = this.getPrice(id);
           const resultado = this.doCalculate(precio);
-          const txt = `${resultado}`;
-
-          navigator.clipboard.writeText(txt).then(() => {
+          navigator.clipboard.writeText(resultado).then(() => {
             this.copiedId = id;
             setTimeout(() => { this.copiedId = null; }, 2000);
           });

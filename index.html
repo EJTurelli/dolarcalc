@@ -5,44 +5,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DolarCalc Pro</title>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
   <script>
     tailwind.config = { darkMode: 'class' }
   </script>
-  <style>
-    [x-cloak] {
-      display: none !important;
-    }
 
-    body {
-      font-family: 'Inter', sans-serif;
-      transition: background-color 0.3s ease;
-    }
-
-    /* Animación para el feedback de copiado */
-    .copy-feedback {
-      animation: fadeInUp 0.3s ease-out;
-    }
-
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(5px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    /* Evita que el zoom automático de iOS rompa el diseño en inputs */
-    input {
-      font-size: 16px;
-    }
-  </style>
+  <link rel="stylesheet" href="css/styles.css">
 </head>
 
 <body
@@ -52,6 +23,7 @@
     class="max-w-xl w-full bg-white dark:bg-slate-900 rounded-[2rem] sm:rounded-[3rem] p-5 sm:p-10 shadow-2xl border border-gray-100 dark:border-slate-800 transition-all"
     x-cloak>
 
+    <!-- Header -->
     <div class="flex justify-between items-center mb-6 sm:mb-8">
       <div>
         <h1 class="text-lg sm:text-xl font-black tracking-tighter text-indigo-600 dark:text-indigo-400 uppercase">
@@ -76,7 +48,10 @@
       </button>
     </div>
 
+    <!-- Contenido principal -->
     <div class="space-y-4 sm:space-y-6">
+
+      <!-- Input de monto -->
       <div
         class="bg-gray-50 dark:bg-slate-800/50 rounded-[1.5rem] sm:rounded-[2.5rem] p-5 sm:p-6 border-2 border-transparent focus-within:border-indigo-500/20 transition-all">
         <div class="flex justify-between px-2 mb-2">
@@ -96,6 +71,7 @@
         </div>
       </div>
 
+      <!-- Selector de modo (venta/compra/promedio) -->
       <div class="flex gap-1.5 p-1 bg-gray-100 dark:bg-slate-800 rounded-xl sm:rounded-2xl">
         <template x-for="m in ['venta', 'compra', 'promedio']">
           <button @click="calcMode = m"
@@ -105,6 +81,7 @@
         </template>
       </div>
 
+      <!-- Lista de cotizaciones -->
       <div class="space-y-2 sm:space-y-3">
         <template
           x-for="tipo in [{id:'blue', n:'Dólar Blue'}, {id:'mep', n:'Dólar MEP'}, {id:'cripto', n:'Dólar Cripto'}, {id:'oficial', n:'Dólar Oficial'}]">
@@ -141,6 +118,7 @@
         </template>
       </div>
 
+      <!-- Footer -->
       <p
         class="text-center text-[9px] sm:text-[11px] font-bold text-gray-400 dark:text-slate-600 uppercase tracking-[0.2em] pt-2">
         Sincronizado con <a rel="noopener" href="https://dolarapi.com/docs/argentina/" target="_blank">DolarApi.com</a>:
@@ -149,147 +127,10 @@
     </div>
   </div>
 
-  <script>
-    function dolarCalc() {
-      return {
-        darkMode: localStorage.getItem('dolarDash_dark') === 'true',
-        datos: {},
-        lastUpdate: '--:--:--',
-        calcInput: 1,
-        calcCurrency: 'USD',
-        calcMode: 'promedio',
-        copiedId: null,
-
-        async init() {
-          await this.updateData();
-          setInterval(() => this.updateData(), 60000);
-        },
-
-        toggleDarkMode() {
-          this.darkMode = !this.darkMode;
-          localStorage.setItem('dolarDash_dark', this.darkMode);
-        },
-
-        async updateData() {
-          try {
-            const [d, c] = await Promise.all([
-              fetch('https://dolarapi.com/v1/dolares').then(r => r.json()),
-              fetch('https://dolarapi.com/v1/dolares/cripto').then(r => r.json())
-            ]);
-            let nuevoEstado = {};
-            d.forEach(item => {
-              const key = item.casa === 'bolsa' ? 'mep' : item.casa;
-              nuevoEstado[key] = item;
-            });
-            nuevoEstado['cripto'] = c;
-            this.datos = nuevoEstado;
-
-            const ahora = new Date();
-            const f = (n) => n.toString().padStart(2, '0');
-            this.lastUpdate = `${f(ahora.getDate())}/${f(ahora.getMonth() + 1)} ${f(ahora.getHours())}:${f(ahora.getMinutes())}:${f(ahora.getSeconds())}`;
-          } catch (e) { console.error(e); }
-        },
-
-        filterKey(e) {
-          const allowedKeys = ['Backspace', 'ArrowLeft', 'ArrowRight', 'Tab', 'Delete', 'Enter', ',', '.'];
-          const isNumber = /[0-9]/.test(e.key);
-
-          // Si presiona punto, lo convertimos visualmente a coma para el usuario argentino
-          if (e.key === '.') {
-            e.preventDefault();
-            if (!e.target.value.includes(',')) {
-              e.target.value += ',';
-              // Disparamos el evento input manualmente para que Alpine se entere
-              e.target.dispatchEvent(new Event('input'));
-            }
-            return;
-          }
-
-          // Bloqueo de segunda coma
-          if (e.key === ',' && e.target.value.includes(',')) {
-            e.preventDefault();
-            return;
-          }
-
-          if (!isNumber && !allowedKeys.includes(e.key)) {
-            e.preventDefault();
-          }
-        },
-
-        format(val) {
-          return val ? `$${val.toLocaleString('es-AR', { minimumFractionDigits: 2 })}` : '--';
-        },
-
-        formatInput(val) {
-          if (val === null || val === undefined || val === '') return '';
-          // Formateamos como número local sin símbolo de moneda
-          return val.toLocaleString('es-AR', {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 2
-          });
-        },
-
-        updateCalcInput(e) {
-          let el = e.target;
-          let originalValue = el.value;
-
-          // Limpieza profunda: solo números y UNA coma
-          let cleanValue = originalValue.replace(/[^0-9,]/g, '');
-          const parts = cleanValue.split(',');
-          if (parts.length > 2) cleanValue = parts[0] + ',' + parts.slice(1).join('');
-
-          // Guardar el valor numérico real para cálculos (usando punto decimal)
-          const numericString = cleanValue.replace(',', '.');
-          this.calcInput = cleanValue === '' || cleanValue === ',' ? 0 : parseFloat(numericString);
-
-          // Formatear la parte entera con puntos de miles para la vista
-          let formattedValue = parts[0];
-          if (formattedValue.length > 0) {
-            // Convertimos a número y formateamos, pero manteniendo el string si es solo "0"
-            let num = parseInt(formattedValue.replace(/\./g, ''), 10);
-            if (!isNaN(num)) {
-              formattedValue = num.toLocaleString('es-AR');
-            }
-          }
-
-          // Re-ensamblar el valor con la parte decimal
-          let finalDisplay = formattedValue;
-          if (parts.length > 1) {
-            finalDisplay += ',' + parts[1].slice(0, 2); // Limitamos a 2 decimales
-          }
-
-          // Solo actualizamos el DOM si el valor cambió
-          // Esto evita que el cursor salte erráticamente
-          if (el.value !== finalDisplay) {
-            el.value = finalDisplay;
-          }
-        },
-
-        getPrice(tipo) {
-          const d = this.datos[tipo];
-          if (!d) return 0;
-          if (this.calcMode === 'venta') return d.venta;
-          if (this.calcMode === 'compra') return d.compra;
-          return (d.venta + d.compra) / 2;
-        },
-
-        doCalculate(precio) {
-          if (!precio) return '0,00';
-          const res = this.calcCurrency === 'USD' ? this.calcInput * precio : this.calcInput / precio;
-          return res.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        },
-
-        copyToClipboard(id, nombre) {
-          const precio = this.getPrice(id);
-          const resultado = this.doCalculate(precio);
-          navigator.clipboard.writeText(resultado).then(() => {
-            this.copiedId = id;
-            setTimeout(() => { this.copiedId = null; }, 2000);
-          });
-        }
-      }
-    }
-  </script>
+  <!-- Scripts -->
+  <script src="js/utils.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
 </body>
 
 </html>

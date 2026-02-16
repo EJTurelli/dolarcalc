@@ -1,0 +1,41 @@
+/* ============================================
+   DolarCalc Pro - Estilos Personalizados
+   ============================================ */
+
+/* Ocultar elementos Alpine hasta que cargue */
+[x-cloak] {
+  display: none !important;
+}
+
+/* Tipografía base */
+body {
+  font-family: 'Inter', sans-serif;
+  transition: background-color 0.3s ease;
+}
+
+/* Animación para el feedback de copiado */
+.copy-feedback {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Evita que el zoom automático de iOS rompa el diseño en inputs */
+input {
+  font-size: 16px;
+}
+
+/* Utilidades adicionales */
+.tracking-tighter {
+  letter-spacing: -0.05em;
+}

@@ -93,11 +93,18 @@ const Utils = {
 
   /**
    * Formatea fecha/hora para el footer
+   * Usa Intl.DateTimeFormat para formato localizado
    * @param {Date} date - Objeto Date
    * @returns {string} Fecha formateada (DD/MM HH:MM:SS)
    */
   formatDateTime(date = new Date()) {
-    const pad = (n) => n.toString().padStart(2, '0');
-    return `${pad(date.getDate())}/${pad(date.getMonth() + 1)} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+    return new Intl.DateTimeFormat('es-AR', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }).format(date);
   }
 };

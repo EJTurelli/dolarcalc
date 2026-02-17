@@ -14,6 +14,12 @@
   </script>
 
   <link rel="stylesheet" href="css/styles.css">
+  <script>
+    // Esto se hace acá, para evitar un destello blanco inicialcuando el dark mode está guardado en el storage
+    if (localStorage.getItem('dolarDash_dark') === 'true') {
+      document.documentElement.classList.add('dark');
+    }
+  </script>
 </head>
 
 <body
@@ -127,16 +133,10 @@
     </div>
   </div>
 
-  <!-- Scripts -->
-  <script>
-    // Esto se hace acá, para evitar un destello blanco inicialcuando el dark mode está guardado en el storage
-    if (localStorage.getItem('dolarDash_dark') === 'true') {
-      document.documentElement.classList.add('dark');
-    }
-  </script>
-  <script src="js/utils.js"></script>
-  <script src="js/api.js"></script>
-  <script src="js/app.js"></script>
+    <!-- Scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/app.js"></script>
 </body>
 
 </html>

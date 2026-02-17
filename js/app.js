@@ -265,7 +265,9 @@ function dolarCalc() {
 
       const originCost = this.operationCosts[origin].commission;
       const destinationCost = this.operationCosts[destination].commission;
-      const parking = this.operationCosts[origin].parking;
+      const parking = this.operationCosts[origin].parking >= this.operationCosts[destination].parking
+        ? this.operationCosts[origin].parking
+        : this.operationCosts[destination].parking;
 
       // Step 1: Buy dollars at origin (using venta/sell price, broker sells to me)
       const netAmount = this.arbitrageAmount * (1 - originCost);

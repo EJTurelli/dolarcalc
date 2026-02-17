@@ -5,44 +5,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DolarCalc Pro</title>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
   <script>
     tailwind.config = { darkMode: 'class' }
   </script>
-  <style>
-    [x-cloak] {
-      display: none !important;
-    }
 
-    body {
-      font-family: 'Inter', sans-serif;
-      transition: background-color 0.3s ease;
+  <link rel="stylesheet" href="css/styles.css">
+  <script>
+    // Esto se hace acá, para evitar un destello blanco inicialcuando el dark mode está guardado en el storage
+    if (localStorage.getItem('dolarDash_dark') === 'true') {
+      document.documentElement.classList.add('dark');
     }
+    viewMode = localStorage.getItem('viewMode') || 'calculator';
 
-    /* Animación para el feedback de copiado */
-    .copy-feedback {
-      animation: fadeInUp 0.3s ease-out;
-    }
-
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(5px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    /* Evita que el zoom automático de iOS rompa el diseño en inputs */
-    input {
-      font-size: 16px;
-    }
-  </style>
+  </script>
 </head>
 
 <body
@@ -52,244 +31,246 @@
     class="max-w-xl w-full bg-white dark:bg-slate-900 rounded-[2rem] sm:rounded-[3rem] p-5 sm:p-10 shadow-2xl border border-gray-100 dark:border-slate-800 transition-all"
     x-cloak>
 
-    <div class="flex justify-between items-center mb-6 sm:mb-8">
-      <div>
-        <h1 class="text-lg sm:text-xl font-black tracking-tighter text-indigo-600 dark:text-indigo-400 uppercase">
-          DolarCalc</h1>
-        <p class="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase tracking-widest">Standalone Tool</p>
+    <!-- Header -->
+    <div class="max-w-6xl mx-auto">
+      <!-- Header -->
+      <div class="flex justify-between items-center mb-8">
+        <div>
+          <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+            DolarCalc Pro
+          </h1>
+          <p class="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase tracking-widest">Standalone Tool</p>
+        </div>
+
+        <!-- Center: View Mode Selector -->
+        <div class="flex-1 flex justify-center px-4">
+          <div class="relative">
+            <select x-model="viewMode" @change="changeViewMode()"
+              class="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white py-2 pl-3 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium cursor-pointer shadow-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-600">
+              <option value="calculator">🧮 Calculadora</option>
+              <option value="arbitrage">🔄 Arbitraje</option>
+            </select>
+            <!-- Custom arrow -->
+            <div
+              class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500 dark:text-gray-400">
+              <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dark Mode Toggle -->
+        <button @click="toggleDarkMode()"
+          class="p-3 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+          :aria-label="darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'">
+          <span x-show="!darkMode">🌙</span>
+          <span x-show="darkMode">☀️</span>
+        </button>
       </div>
 
-      <button @click="toggleDarkMode()"
-        class="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-yellow-400 transition-all">
-        <template x-if="!darkMode">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-          </svg>
-        </template>
-        <template x-if="darkMode">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M12 3v1m0 18v1m9-9h1M3 12H1m15.364-6.364l.707-.707M6.343 17.657l-.707-.707m12.728 0l-.707.707M6.343 6.343l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-          </svg>
-        </template>
-      </button>
-    </div>
+      <!-- CALCULATOR VIEW -->
+      <div x-show="viewMode === 'calculator'" x-transition>
+        <div class="space-y-4 sm:space-y-6">
 
-    <div class="space-y-4 sm:space-y-6">
-      <div
-        class="bg-gray-50 dark:bg-slate-800/50 rounded-[1.5rem] sm:rounded-[2.5rem] p-5 sm:p-6 border-2 border-transparent focus-within:border-indigo-500/20 transition-all">
-        <div class="flex justify-between px-2 mb-2">
-          <select x-model="calcCurrency"
-            class="bg-transparent font-black text-xs sm:text-sm text-slate-400 dark:text-slate-500 outline-none cursor-pointer">
-            <option value="USD">USD ⮕ ARS</option>
-            <option value="ARS">ARS ⮕ USD</option>
-          </select>
+          <!-- Input de monto -->
+          <div
+            class="bg-gray-50 dark:bg-slate-800/50 rounded-[1.5rem] sm:rounded-[2.5rem] p-5 sm:p-6 border-2 border-transparent focus-within:border-indigo-500/20 transition-all">
+            <div class="flex justify-between px-2 mb-2">
+              <select x-model="calcCurrency"
+                class="bg-transparent font-black text-xs sm:text-sm text-slate-400 dark:text-slate-500 outline-none cursor-pointer">
+                <option value="USD">USD ⮕ ARS</option>
+                <option value="ARS">ARS ⮕ USD</option>
+              </select>
+            </div>
+            <div class="flex items-center justify-between gap-2 sm:gap-4">
+              <span class="text-xl sm:text-3xl font-black text-gray-300 dark:text-slate-600"
+                x-text="calcCurrency === 'USD' ? 'u$s' : '$'"></span>
+              <input type="text" :value="formatInput(calcInput)" @input="updateCalcInput($event)"
+                @keydown="filterKey($event)"
+                class="w-full bg-transparent text-right text-4xl sm:text-6xl font-black outline-none text-slate-900 dark:text-white tracking-tighter placeholder-gray-200 dark:placeholder-slate-700"
+                inputmode="decimal" placeholder="0">
+            </div>
+          </div>
+
+          <!-- Selector de modo (venta/compra/promedio) -->
+          <div class="flex gap-1.5 p-1 bg-gray-100 dark:bg-slate-800 rounded-xl sm:rounded-2xl">
+            <template x-for="m in ['venta', 'compra', 'promedio']">
+              <button @click="calcMode = m"
+                :class="calcMode === m ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-300' : 'text-gray-500 dark:text-gray-400'"
+                class="flex-1 py-2 sm:py-3 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition-all uppercase"
+                x-text="m"></button>
+            </template>
+          </div>
+
+          <!-- Lista de cotizaciones -->
+          <div class="space-y-2 sm:space-y-3">
+            <template
+              x-for="tipo in [{id:'blue', n:'Dólar Blue'}, {id:'mep', n:'Dólar MEP'}, {id:'cripto', n:'Dólar Cripto'}, {id:'oficial', n:'Dólar Oficial'}]">
+              <div
+                class="group relative flex justify-between items-center p-4 sm:p-6 bg-gray-50 dark:bg-slate-800/30 rounded-[1.2rem] sm:rounded-[2rem] border border-transparent hover:border-indigo-500/30 transition-all overflow-hidden">
+                <div class="min-w-0 flex-1">
+                  <p class="text-[8px] sm:text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-0.5"
+                    x-text="tipo.n"></p>
+                  <p class="text-[9px] sm:text-[10px] font-bold text-indigo-400 truncate"
+                    x-text="'Ref: ' + format(getPrice(tipo.id))"></p>
+                </div>
+                <div class="flex items-center gap-2 sm:gap-3 ml-2">
+                  <p
+                    class="text-xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tighter whitespace-nowrap">
+                    <span class="text-[10px] sm:text-sm font-medium text-gray-400 mr-0.5"
+                      x-text="calcCurrency === 'USD' ? '$' : 'u$s'"></span>
+                    <span x-text="doCalculate(getPrice(tipo.id))"></span>
+                  </p>
+                  <button @click="copyToClipboard(tipo.id, tipo.n)"
+                    class="hidden sm:block p-2 rounded-lg bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity hover:text-indigo-600 dark:hover:text-indigo-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                    </svg>
+                  </button>
+                </div>
+                <div @click="copyToClipboard(tipo.id, tipo.n)" class="sm:hidden absolute inset-0 cursor-pointer"></div>
+
+                <div x-show="copiedId === tipo.id" x-transition
+                  class="absolute right-4 top-1 bg-indigo-600 text-white text-[8px] font-bold px-2 py-0.5 rounded shadow-lg copy-feedback">
+                  COPIADO!</div>
+              </div>
+            </template>
+          </div>
+
+          <!-- Footer -->
+          <p
+            class="text-center text-[9px] sm:text-[11px] font-bold text-gray-400 dark:text-slate-600 uppercase tracking-[0.2em] pt-2">
+            Sincronizado con <a rel="noopener" href="https://dolarapi.com/docs/argentina/"
+              target="_blank">DolarApi.com</a>:
+            <span x-text="lastUpdate"></span>
+          </p>
         </div>
+      </div>
+
+    </div><!-- End Calculator View -->
+
+    <!-- ARBITRAGE VIEW -->
+    <div x-show="viewMode === 'arbitrage'" x-cloak x-transition class="space-y-6">
+
+      <!-- Amount Input -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Monto a invertir (ARS)</label>
         <div class="flex items-center justify-between gap-2 sm:gap-4">
-          <span class="text-xl sm:text-3xl font-black text-gray-300 dark:text-slate-600"
-            x-text="calcCurrency === 'USD' ? 'u$s' : '$'"></span>
-          <input type="text" :value="formatInput(calcInput)" @input="updateCalcInput($event)"
+
+          <span class="text-xl sm:text-3xl font-black text-gray-300 dark:text-slate-600" x-text="'$'"></span>
+          <input type="text" :value="formatInput(arbitrageAmount)" @input="updateArbitrageAmount($event)"
             @keydown="filterKey($event)"
             class="w-full bg-transparent text-right text-4xl sm:text-6xl font-black outline-none text-slate-900 dark:text-white tracking-tighter placeholder-gray-200 dark:placeholder-slate-700"
             inputmode="decimal" placeholder="0">
         </div>
+        <p class="text-xs text-gray-500 mt-2">Monto base para calcular retornos potenciales</p>
       </div>
 
-      <div class="flex gap-1.5 p-1 bg-gray-100 dark:bg-slate-800 rounded-xl sm:rounded-2xl">
-        <template x-for="m in ['venta', 'compra', 'promedio']">
-          <button @click="calcMode = m"
-            :class="calcMode === m ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-300' : 'text-gray-500 dark:text-gray-400'"
-            class="flex-1 py-2 sm:py-3 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition-all uppercase"
-            x-text="m"></button>
-        </template>
-      </div>
-
-      <div class="space-y-2 sm:space-y-3">
-        <template
-          x-for="tipo in [{id:'blue', n:'Dólar Blue'}, {id:'mep', n:'Dólar MEP'}, {id:'cripto', n:'Dólar Cripto'}, {id:'oficial', n:'Dólar Oficial'}]">
-          <div
-            class="group relative flex justify-between items-center p-4 sm:p-6 bg-gray-50 dark:bg-slate-800/30 rounded-[1.2rem] sm:rounded-[2rem] border border-transparent hover:border-indigo-500/30 transition-all overflow-hidden">
-            <div class="min-w-0 flex-1">
-              <p class="text-[8px] sm:text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-0.5"
-                x-text="tipo.n"></p>
-              <p class="text-[9px] sm:text-[10px] font-bold text-indigo-400 truncate"
-                x-text="'Ref: ' + format(getPrice(tipo.id))"></p>
+      <!-- Best Opportunity -->
+      <template x-if="bestArbitrage">
+        <div
+          class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg p-6 text-white shadow-lg transform hover:scale-[1.02] transition-transform relative overflow-hidden">
+          <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
+          <div class="relative flex items-center justify-between">
+            <div>
+              <p class="text-green-100 text-sm font-medium mb-1 uppercase tracking-wide">🏆 Mejor Oportunidad</p>
+              <h3 class="text-2xl font-bold" x-text="bestArbitrage.result.operation"></h3>
+              <p class="text-4xl font-bold mt-2" x-text="`+${bestArbitrage.result.profitability.toFixed(2)}%`"></p>
             </div>
-            <div class="flex items-center gap-2 sm:gap-3 ml-2">
-              <p
-                class="text-xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tighter whitespace-nowrap">
-                <span class="text-[10px] sm:text-sm font-medium text-gray-400 mr-0.5"
-                  x-text="calcCurrency === 'USD' ? '$' : 'u$s'"></span>
-                <span x-text="doCalculate(getPrice(tipo.id))"></span>
-              </p>
-              <button @click="copyToClipboard(tipo.id, tipo.n)"
-                class="hidden sm:block p-2 rounded-lg bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity hover:text-indigo-600 dark:hover:text-indigo-400">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                </svg>
-              </button>
+            <div class="text-right">
+              <p class="text-green-100 text-sm mb-1">Ganancia Neta</p>
+              <p class="text-2xl font-semibold" x-text="format(bestArbitrage.result.profit)"></p>
+              <span x-show="bestArbitrage.requiresParking"
+                class="inline-block mt-2 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium">
+                ⏰ Parking: <span x-text="bestArbitrage.result.parkingHours"></span>hs
+              </span>
             </div>
-            <div @click="copyToClipboard(tipo.id, tipo.n)" class="sm:hidden absolute inset-0 cursor-pointer"></div>
-
-            <div x-show="copiedId === tipo.id" x-transition
-              class="absolute right-4 top-1 bg-indigo-600 text-white text-[8px] font-bold px-2 py-0.5 rounded shadow-lg copy-feedback">
-              COPIADO!</div>
           </div>
-        </template>
+        </div>
+      </template>
+
+      <!-- All Opportunities Table -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+          <h3 class="font-bold text-lg text-gray-900 dark:text-white">Todas las oportunidades</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Ordenadas por rentabilidad (mayor primero)</p>
+        </div>
+
+        <div class="divide-y divide-gray-200 dark:divide-gray-700">
+          <template x-for="item in arbitrageResults" :key="item.id">
+            <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200"
+              :class="item.result.isViable ? 'border-l-4 border-green-500 bg-green-50/30 dark:bg-green-900/10' : 'border-l-4 border-gray-300 dark:border-gray-600'">
+
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                  <!-- Status Indicator -->
+                  <div class="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold shadow-sm"
+                    :class="item.result.isViable ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'">
+                    <span x-text="item.result.isViable ? '✓' : '✕'"></span>
+                  </div>
+
+                  <div>
+                    <p class="font-semibold text-gray-900 dark:text-white text-lg" x-text="item.result.operation"></p>
+                    <div class="flex items-center space-x-3 text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      <span x-show="item.requiresParking"
+                        class="text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
+                        <span>⚠️</span>
+                        <span>Parking: <span x-text="item.result.parkingHours"></span>hs</span>
+                      </span>
+                      <span class="capitalize" x-text="`Riesgo: ${item.result.risk}`"></span>
+                      <span x-text="`Com: ${item.result.totalCommission.toFixed(2)}%`"></span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="text-right">
+                  <p class="text-2xl font-bold"
+                    :class="item.result.profitability > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'"
+                    x-text="`${item.result.profitability > 0 ? '+' : ''}${item.result.profitability.toFixed(2)}%`">
+                  </p>
+                  <p class="text-sm text-gray-500 dark:text-gray-400 font-medium" x-text="format(item.result.profit)">
+                  </p>
+                </div>
+              </div>
+
+              <!-- Recommendation Badge -->
+              <div class="mt-3">
+                <span class="inline-block px-3 py-1 rounded-full text-xs font-medium border" :class="{
+                                              'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700': item.result.profitability >= 2,
+                                              'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-700': item.result.profitability >= 0.5 && item.result.profitability < 2,
+                                              'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700': item.result.profitability < 0.5
+                                          }" x-text="item.result.recommendation">
+                </span>
+              </div>
+            </div>
+          </template>
+        </div>
       </div>
 
-      <p
-        class="text-center text-[9px] sm:text-[11px] font-bold text-gray-400 dark:text-slate-600 uppercase tracking-[0.2em] pt-2">
-        Sincronizado con <a rel="noopener" href="https://dolarapi.com/docs/argentina/" target="_blank">DolarApi.com</a>:
-        <span x-text="lastUpdate"></span>
-      </p>
-    </div>
-  </div>
+      <!-- Notes -->
+      <div
+        class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 text-sm text-blue-800 dark:text-blue-200 border border-blue-200 dark:border-blue-800">
+        <p class="font-semibold mb-2 flex items-center gap-2">
+          <span>📋</span>
+          <span>Notas importantes:</span>
+        </p>
+        <ul class="space-y-2 list-disc list-inside">
+          <li><strong>Parking:</strong> Tiempo de liquidación obligatorio estimado entre operaciones bursátiles.</li>
+          <li><strong>Comisiones:</strong> Incluyen IVA, derechos de mercado y spread estimado del exchange</li>
+          <li><strong>Riesgo:</strong> Considerá volatilidad y posibles cambios de cotización durante el parking</li>
+          <li>Los cálculos son estimaciones. Verificá costos reales con tu broker/exchange</li>
+        </ul>
+      </div>
 
-  <script>
-    function dolarCalc() {
-      return {
-        darkMode: localStorage.getItem('dolarDash_dark') === 'true',
-        datos: {},
-        lastUpdate: '--:--:--',
-        calcInput: 1,
-        calcCurrency: 'USD',
-        calcMode: 'promedio',
-        copiedId: null,
+    </div><!-- End Arbitrage View -->
 
-        async init() {
-          await this.updateData();
-          setInterval(() => this.updateData(), 60000);
-        },
-
-        toggleDarkMode() {
-          this.darkMode = !this.darkMode;
-          localStorage.setItem('dolarDash_dark', this.darkMode);
-        },
-
-        async updateData() {
-          try {
-            const [d, c] = await Promise.all([
-              fetch('https://dolarapi.com/v1/dolares').then(r => r.json()),
-              fetch('https://dolarapi.com/v1/dolares/cripto').then(r => r.json())
-            ]);
-            let nuevoEstado = {};
-            d.forEach(item => {
-              const key = item.casa === 'bolsa' ? 'mep' : item.casa;
-              nuevoEstado[key] = item;
-            });
-            nuevoEstado['cripto'] = c;
-            this.datos = nuevoEstado;
-
-            const ahora = new Date();
-            const f = (n) => n.toString().padStart(2, '0');
-            this.lastUpdate = `${f(ahora.getDate())}/${f(ahora.getMonth() + 1)} ${f(ahora.getHours())}:${f(ahora.getMinutes())}:${f(ahora.getSeconds())}`;
-          } catch (e) { console.error(e); }
-        },
-
-        filterKey(e) {
-          const allowedKeys = ['Backspace', 'ArrowLeft', 'ArrowRight', 'Tab', 'Delete', 'Enter', ',', '.'];
-          const isNumber = /[0-9]/.test(e.key);
-
-          // Si presiona punto, lo convertimos visualmente a coma para el usuario argentino
-          if (e.key === '.') {
-            e.preventDefault();
-            if (!e.target.value.includes(',')) {
-              e.target.value += ',';
-              // Disparamos el evento input manualmente para que Alpine se entere
-              e.target.dispatchEvent(new Event('input'));
-            }
-            return;
-          }
-
-          // Bloqueo de segunda coma
-          if (e.key === ',' && e.target.value.includes(',')) {
-            e.preventDefault();
-            return;
-          }
-
-          if (!isNumber && !allowedKeys.includes(e.key)) {
-            e.preventDefault();
-          }
-        },
-
-        format(val) {
-          return val ? `$${val.toLocaleString('es-AR', { minimumFractionDigits: 2 })}` : '--';
-        },
-
-        formatInput(val) {
-          if (val === null || val === undefined || val === '') return '';
-          // Formateamos como número local sin símbolo de moneda
-          return val.toLocaleString('es-AR', {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 2
-          });
-        },
-
-        updateCalcInput(e) {
-          let el = e.target;
-          let originalValue = el.value;
-
-          // Limpieza profunda: solo números y UNA coma
-          let cleanValue = originalValue.replace(/[^0-9,]/g, '');
-          const parts = cleanValue.split(',');
-          if (parts.length > 2) cleanValue = parts[0] + ',' + parts.slice(1).join('');
-
-          // Guardar el valor numérico real para cálculos (usando punto decimal)
-          const numericString = cleanValue.replace(',', '.');
-          this.calcInput = cleanValue === '' || cleanValue === ',' ? 0 : parseFloat(numericString);
-
-          // Formatear la parte entera con puntos de miles para la vista
-          let formattedValue = parts[0];
-          if (formattedValue.length > 0) {
-            // Convertimos a número y formateamos, pero manteniendo el string si es solo "0"
-            let num = parseInt(formattedValue.replace(/\./g, ''), 10);
-            if (!isNaN(num)) {
-              formattedValue = num.toLocaleString('es-AR');
-            }
-          }
-
-          // Re-ensamblar el valor con la parte decimal
-          let finalDisplay = formattedValue;
-          if (parts.length > 1) {
-            finalDisplay += ',' + parts[1].slice(0, 2); // Limitamos a 2 decimales
-          }
-
-          // Solo actualizamos el DOM si el valor cambió
-          // Esto evita que el cursor salte erráticamente
-          if (el.value !== finalDisplay) {
-            el.value = finalDisplay;
-          }
-        },
-
-        getPrice(tipo) {
-          const d = this.datos[tipo];
-          if (!d) return 0;
-          if (this.calcMode === 'venta') return d.venta;
-          if (this.calcMode === 'compra') return d.compra;
-          return (d.venta + d.compra) / 2;
-        },
-
-        doCalculate(precio) {
-          if (!precio) return '0,00';
-          const res = this.calcCurrency === 'USD' ? this.calcInput * precio : this.calcInput / precio;
-          return res.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        },
-
-        copyToClipboard(id, nombre) {
-          const precio = this.getPrice(id);
-          const resultado = this.doCalculate(precio);
-          navigator.clipboard.writeText(resultado).then(() => {
-            this.copiedId = id;
-            setTimeout(() => { this.copiedId = null; }, 2000);
-          });
-        }
-      }
-    }
-  </script>
+    <!-- Scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/app.js"></script>
 </body>
 
 </html>

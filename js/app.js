@@ -31,6 +31,22 @@ function dolarCalc() {
     /** ID del tipo copiado (para feedback visual) */
     copiedId: null,
 
+
+    // ==========================================
+    // Arbitraje
+    // ==========================================
+
+    viewMode: localStorage.getItem('viewMode') || 'calculator', // 'calculator' | 'arbitrage'
+    arbitrageAmount: 100000,
+
+    /** Configuracion de costos */
+    operationCosts: {
+      mep: { commission: 0.006, parking: 24, name: 'MEP', nameEs: 'MEP' },
+      blue: { commission: 0.00, parking: 0, name: 'Blue', nameEs: 'Blue' },
+      cripto: { commission: 0.005, parking: 0, name: 'Crypto', nameEs: 'Cripto' },
+      oficial: { commission: 0.00, parking: 0, name: 'Official', nameEs: 'Oficial' }
+    },
+
     // ==========================================
     // Ciclo de vida
     // ==========================================
@@ -54,6 +70,10 @@ function dolarCalc() {
     toggleDarkMode() {
       this.darkMode = !this.darkMode;
       localStorage.setItem('dolarDash_dark', this.darkMode);
+    },
+
+    changeViewMode() {
+      localStorage.setItem('viewMode', this.viewMode);
     },
 
     /**
@@ -110,7 +130,14 @@ function dolarCalc() {
       const cleanValue = Utils.cleanInput(originalValue);
 
       // Convertir a número para cálculos
-      this.calcInput = Utils.parseInputValue(cleanValue);
+      const numericValue = Utils.parseInputValue(cleanValue);
+
+      // Update appropriate field based on context
+      if (this.viewMode === 'arbitrage') {
+        this.arbitrageAmount = numericValue;
+      } else {
+        this.calcInput = numericValue;
+      }
 
       // Formatear para visualización
       const finalDisplay = Utils.formatDisplayValue(cleanValue);
@@ -122,15 +149,29 @@ function dolarCalc() {
     },
 
     /**
+     * Update arbitrage amount specifically
+     * @param {InputEvent} e - Input event
+     */
+    updateArbitrageAmount(e) {
+      const el = e.target;
+      const cleanValue = Utils.cleanInput(el.value);
+      this.arbitrageAmount = Utils.parseInputValue(cleanValue);
+      const finalDisplay = Utils.formatDisplayValue(cleanValue);
+      if (el.value !== finalDisplay) {
+        el.value = finalDisplay;
+      }
+    },
+
+    /**
      * Copia el resultado al portapapeles
      * @param {string} id - ID del tipo de dólar
      * @param {string} nombre - Nombre del tipo de dólar
      */
-    copyToClipboard(id, nombre) {
-      const precio = this.getPrice(id);
-      const resultado = this.doCalculate(precio);
+    copyToClipboard(id, name) {
+      const price = this.getPrice(id);
+      const result = this.doCalculate(price);
 
-      navigator.clipboard.writeText(resultado).then(() => {
+      navigator.clipboard.writeText(result).then(() => {
         this.copiedId = id;
         setTimeout(() => {
           this.copiedId = null;
@@ -144,11 +185,11 @@ function dolarCalc() {
 
     /**
      * Obtiene el precio según el tipo y modo seleccionado
-     * @param {string} tipo - Tipo de dólar (blue, mep, cripto, oficial)
-     * @returns {number} Precio correspondiente
+     * @param {string} type - Dollar type (blue, mep, cripto, oficial)
+     * @returns {number} Corresponding price
      */
-    getPrice(tipo) {
-      const d = this.datos[tipo];
+    getPrice(type) {
+      const d = this.datos[type];
       if (!d) return 0;
 
       if (this.calcMode === 'venta') return d.venta;
@@ -160,20 +201,142 @@ function dolarCalc() {
 
     /**
      * Realiza el cálculo de conversión
-     * @param {number} precio - Precio del dólar
-     * @returns {string} Resultado formateado
+     * @param {number} price - Dollar price
+     * @returns {string} Formatted result
      */
-    doCalculate(precio) {
-      if (!precio) return '0,00';
+    doCalculate(price) {
+      if (!price) return '0,00';
 
       const res = this.calcCurrency === 'USD'
-        ? this.calcInput * precio
-        : this.calcInput / precio;
+        ? this.calcInput * price
+        : this.calcInput / price;
 
       return res.toLocaleString('es-AR', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       });
+    },
+
+    // ==========================================
+    // Arbitrage Methods
+    // ==========================================
+
+    /**
+     * Get all valid arbitrage combinations (12 total)
+     */
+    get arbitrageCombinations() {
+      const types = ['mep', 'blue', 'cripto', 'oficial'];
+      const combinations = [];
+
+      for (let origin of types) {
+        for (let destination of types) {
+          if (origin !== destination) {
+            combinations.push({
+              id: `${origin}-${destination}`,
+              origin,
+              destination,
+              originName: this.operationCosts[origin].name,
+              originNameEs: this.operationCosts[origin].nameEs,
+              destinationName: this.operationCosts[destination].name,
+              destinationNameEs: this.operationCosts[destination].nameEs,
+              requiresParking: this.hasParking(origin, destination)
+            });
+          }
+        }
+      }
+      return combinations;
+    },
+
+    /**
+     * Determine if operation requires parking
+     */
+    hasParking(origin, destination) {
+      return this.operationCosts[origin].parking > 0 || this.operationCosts[destination].parking > 0;
+    },
+
+    /**
+     * Calculate arbitrage for a specific combination
+     */
+    calculateArbitrage(origin, destination) {
+      const originData = this.datos[origin];
+      const destinationData = this.datos[destination];
+
+      if (!originData || !destinationData) return null;
+
+      const originCost = this.operationCosts[origin].commission;
+      const destinationCost = this.operationCosts[destination].commission;
+      const parking = this.operationCosts[origin].parking;
+
+      // Step 1: Buy dollars at origin (using venta/sell price, broker sells to me)
+      const netAmount = this.arbitrageAmount * (1 - originCost);
+      const usdBought = netAmount / originData.venta;
+
+      // Step 2: Sell dollars at destination (using compra/buy price, broker buys from me)
+      const grossFinal = usdBought * destinationData.compra;
+      const finalAmount = grossFinal * (1 - destinationCost);
+
+      // Results
+      const netProfit = finalAmount - this.arbitrageAmount;
+      const profitability = (netProfit / this.arbitrageAmount) * 100;
+
+      // Threshold (stricter if parking involved)
+      const minThreshold = parking > 0 ? 1.5 : 0.8;
+
+      return {
+        operation: `${this.operationCosts[origin].nameEs} → ${this.operationCosts[destination].nameEs}`,
+        operationEn: `${this.operationCosts[origin].name} → ${this.operationCosts[destination].name}`,
+        initialAmount: this.arbitrageAmount,
+        finalAmount: finalAmount,
+        profit: netProfit,
+        profitability: profitability,
+        usdIntermediate: usdBought,
+        parkingHours: parking,
+        totalCommission: (originCost + destinationCost) * 100,
+        isViable: profitability > minThreshold,
+        risk: this.calculateRisk(origin, destination, parking),
+        recommendation: this.generateRecommendation(profitability, parking)
+      };
+    },
+
+    /**
+     * Calculate risk level
+     */
+    calculateRisk(origin, destination, parking) {
+      let level = 'bajo';
+      if (parking > 0) level = 'medio';
+      if (origin === 'cripto' || destination === 'cripto') level = 'alto';
+      if (origin === 'blue' && destination === 'mep') level = 'medio';
+      return level;
+    },
+
+    /**
+     * Generate recommendation text
+     */
+    generateRecommendation(profitability, parking) {
+      if (profitability < 0.5) return '❌ No viable';
+      if (profitability < 1.0) return '⚠️ Marginal';
+      if (profitability < 2.0 && parking > 0) return '⏳ Evaluar risesgo de parking';
+      if (profitability >= 2.0) return '✅ Viable';
+      return '🤔 Neutral';
+    },
+
+    /**
+     * Get all arbitrage results sorted by profitability
+     */
+    get arbitrageResults() {
+      return this.arbitrageCombinations.map(combo => ({
+        ...combo,
+        result: this.calculateArbitrage(combo.origin, combo.destination)
+      })).filter(item => item.result !== null)
+        .sort((a, b) => b.result.profitability - a.result.profitability);
+    },
+
+    /**
+     * Get best viable arbitrage opportunity
+     */
+    get bestArbitrage() {
+      const viable = this.arbitrageResults.filter(r => r.result.isViable);
+      return viable.length > 0 ? viable[0] : null;
     },
 
     // ==========================================

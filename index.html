@@ -42,14 +42,16 @@
           <p class="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase tracking-widest">Standalone Tool</p>
         </div>
 
+      </div>
+      <div class="flex justify-between items-center mb-8">
         <!-- Center: View Mode Selector -->
-        <div class="flex-1 flex justify-center px-4">
+        <div class="flex-1 flex justify-start">
           <div class="relative">
             <select x-model="viewMode" @change="changeViewMode()"
               class="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white py-2 pl-3 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium cursor-pointer shadow-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-600">
               <option value="calculator">🧮 Calculadora</option>
-              <option value="arbitrage">🔄 Arbitraje</option>
               <option value="currencies">💱 Monedas</option>
+              <option value="arbitrage">🔄 Arbitraje</option>
             </select>
             <!-- Custom arrow -->
             <div

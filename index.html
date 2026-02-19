@@ -42,12 +42,15 @@
           <p class="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase tracking-widest">Standalone Tool</p>
         </div>
 
+      </div>
+      <div class="flex justify-between items-center mb-8">
         <!-- Center: View Mode Selector -->
-        <div class="flex-1 flex justify-center px-4">
+        <div class="flex-1 flex justify-start">
           <div class="relative">
             <select x-model="viewMode" @change="changeViewMode()"
               class="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white py-2 pl-3 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium cursor-pointer shadow-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-600">
               <option value="calculator">🧮 Calculadora</option>
+              <option value="currencies">💱 Monedas</option>
               <option value="arbitrage">🔄 Arbitraje</option>
             </select>
             <!-- Custom arrow -->
@@ -266,6 +269,88 @@
       </div>
 
     </div><!-- End Arbitrage View -->
+
+    <!-- CURRENCIES VIEW -->
+    <div x-show="viewMode === 'currencies'" x-cloak x-transition class="space-y-6">
+
+      <!-- Input Section -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <div class="flex flex-col sm:flex-row gap-4 items-end">
+          <div class="w-full sm:w-48">
+            <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Moneda</label>
+            <select x-model="selectedCurrency"
+              class="w-full h-[58px] bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg px-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-medium text-base">
+              <template x-for="currency in currenciesData" :key="currency.moneda">
+                <option :value="currency.moneda"
+                  x-text="`${getCurrencyFlag(currency.moneda)} ${currency.nombre} (${currency.moneda})`"></option>
+              </template>
+            </select>
+          </div>
+          <div class="flex-1 w-full">
+            <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Monto</label>
+            <input type="text" :value="formatInput(currenciesAmount)" @input="updateCurrenciesAmount($event)"
+              @keydown="filterKey($event)"
+              class="w-full text-2xl font-bold bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-gray-900 dark:text-white text-right"
+              placeholder="1.000">
+          </div>
+        </div>
+
+        <p class="text-xs text-gray-500 mt-3">
+          Seleccioná una moneda para ver su equivalencia en las demás cotizaciones
+        </p>
+      </div>
+
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+        <div class="divide-y divide-gray-200 dark:divide-gray-700">
+          <template x-for="currency in currenciesData" :key="currency.moneda">
+            <div
+              class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-between">
+
+              <div class="flex items-center gap-3">
+                <span class="text-2xl" x-text="getCurrencyFlag(currency.moneda)"></span>
+                <div>
+                  <p class="font-semibold text-gray-900 dark:text-white" x-text="currency.nombre"></p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400" x-text="currency.moneda"></p>
+                </div>
+              </div>
+
+              <div class="text-right">
+                <p class="text-xl font-bold text-gray-900 dark:text-white font-mono"
+                  x-text="format(currenciesAmount * (selectedCurrencyData?.venta || 1) / currency.venta)">
+                </p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  1 <span x-text="selectedCurrency"></span> =
+                  <span x-text="((selectedCurrencyData?.venta || 1) / currency.venta).toFixed(4)"></span>
+                  <span x-text="currency.moneda"></span>
+                </p>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- Info Note -->
+      <div
+        class="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 text-sm text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800">
+        <p class="font-semibold mb-2 flex items-center gap-2">
+          <span>💡</span>
+          <span>Información:</span>
+        </p>
+        <ul class="space-y-1 list-disc list-inside">
+          <li>Las cotizaciones se actualizan automáticamente cada 60 segundos</li>
+          <li>Los valores mostrados son referenciales y pueden variar según el mercado</li>
+          <li>Se incluyen las principales monedas cotizadas en la región</li>
+        </ul>
+      </div>
+
+      <!-- Footer -->
+      <p
+        class="text-center text-[9px] sm:text-[11px] font-bold text-gray-400 dark:text-slate-600 uppercase tracking-[0.2em] pt-2">
+        Sincronizado con <a rel="noopener" href="https://dolarapi.com/docs/argentina/" target="_blank">DolarApi.com</a>:
+        <span x-text="lastUpdate"></span>
+      </p>
+
+    </div><!-- End Currencies View -->
 
     <!-- Scripts -->
     <script src="js/utils.js"></script>

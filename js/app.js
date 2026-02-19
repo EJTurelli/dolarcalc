@@ -16,6 +16,9 @@ function dolarCalc() {
     /** Datos de cotizaciones */
     datos: {},
 
+    /** Currencies data from /cotizaciones endpoint */
+    currenciesData: [],
+
     /** Última actualización (string formateado) */
     lastUpdate: '--:--:--',
 
@@ -31,12 +34,18 @@ function dolarCalc() {
     /** ID del tipo copiado (para feedback visual) */
     copiedId: null,
 
+    // ==========================================
+    // View Mode State
+    // ==========================================
+
+    /** Current view mode: calculator | arbitrage | currencies */
+    viewMode: localStorage.getItem('viewMode') || 'calculator',
 
     // ==========================================
-    // Arbitraje
+    // Arbitrage State
     // ==========================================
 
-    viewMode: localStorage.getItem('viewMode') || 'calculator', // 'calculator' | 'arbitrage'
+    /** Arbitrage amount in ARS */
     arbitrageAmount: 100000,
 
     /** Configuracion de costos */
@@ -46,6 +55,16 @@ function dolarCalc() {
       cripto: { commission: 0.005, parking: 0, name: 'Crypto', nameEs: 'Cripto' },
       oficial: { commission: 0.00, parking: 0, name: 'Official', nameEs: 'Oficial' }
     },
+
+    // ==========================================
+    // Currencies State
+    // ==========================================
+
+    /** Selected currency code for conversion */
+    selectedCurrency: 'ARS',
+
+    /** Amount to convert in currencies mode */
+    currenciesAmount: 1000,
 
     // ==========================================
     // Ciclo de vida
@@ -64,9 +83,53 @@ function dolarCalc() {
     // Acciones
     // ==========================================
 
+
+
     /**
-     * Alterna entre modo oscuro y claro
+     * Actualiza los datos desde la API
      */
+    async updateData() {
+      try {
+        this.datos = await DolarApiService.fetchAllCotizaciones();
+
+        this.currenciesData = await this.fetchCurrencies();
+
+        this.lastUpdate = Utils.formatDateTime();
+      } catch (error) {
+        console.error('Error al actualizar datos:', error);
+      }
+    },
+
+    /**
+     * Fetch currencies from /v1/cotizaciones endpoint
+     */
+    async fetchCurrencies() {
+      try {
+        const response = await fetch('https://dolarapi.com/v1/cotizaciones');
+        if (!response.ok) throw new Error('Failed to fetch currencies');
+        const data = await response.json();
+
+        // Add ARS (peso argentino) as base currency with value 1
+        return [
+          {
+            moneda: 'ARS',
+            nombre: 'Peso Argentino',
+            compra: 1,
+            venta: 1,
+            fechaActualizacion: new Date().toISOString()
+          },
+          ...data
+        ];
+      } catch (error) {
+        console.error('Error al buscar cotizaciones:', error);
+        return [];
+      }
+    },
+
+
+    /**
+ * Alterna entre modo oscuro y claro
+ */
     toggleDarkMode() {
       this.darkMode = !this.darkMode;
       localStorage.setItem('dolarDash_dark', this.darkMode);
@@ -77,17 +140,6 @@ function dolarCalc() {
     },
 
     /**
-     * Actualiza los datos desde la API
-     */
-    async updateData() {
-      try {
-        this.datos = await DolarApiService.fetchAllCotizaciones();
-        this.lastUpdate = Utils.formatDateTime();
-      } catch (error) {
-        console.error('Error al actualizar datos:', error);
-      }
-    },
-
     /**
      * Filtra las teclas permitidas en el input
      * @param {KeyboardEvent} e - Evento de teclado
@@ -135,6 +187,8 @@ function dolarCalc() {
       // Update appropriate field based on context
       if (this.viewMode === 'arbitrage') {
         this.arbitrageAmount = numericValue;
+      } else if (this.viewMode === 'currencies') {
+        this.currenciesAmount = numericValue;
       } else {
         this.calcInput = numericValue;
       }
@@ -163,9 +217,23 @@ function dolarCalc() {
     },
 
     /**
+     * Update currencies amount specifically
+     * @param {InputEvent} e - Input event
+     */
+    updateCurrenciesAmount(e) {
+      const el = e.target;
+      const cleanValue = Utils.cleanInput(el.value);
+      this.currenciesAmount = Utils.parseInputValue(cleanValue);
+      const finalDisplay = Utils.formatDisplayValue(cleanValue);
+      if (el.value !== finalDisplay) {
+        el.value = finalDisplay;
+      }
+    },
+
+    /**
      * Copia el resultado al portapapeles
      * @param {string} id - ID del tipo de dólar
-     * @param {string} nombre - Nombre del tipo de dólar
+     * @param {string} name - Nombre del tipo de dólar
      */
     copyToClipboard(id, name) {
       const price = this.getPrice(id);
@@ -342,7 +410,81 @@ function dolarCalc() {
     },
 
     // ==========================================
-    // Formateo (wrappers de Utils)
+    // Currencies Methods
+    // ==========================================
+
+    /**
+     * Get selected currency data
+     */
+    get selectedCurrencyData() {
+      return this.currenciesData.find(c => c.moneda === this.selectedCurrency) || null;
+    },
+
+    /**
+     * Get all currencies except the selected one for display
+     */
+    get otherCurrencies() {
+      if (!this.selectedCurrencyData) return [];
+
+      return this.currenciesData
+        .filter(c => c.moneda !== this.selectedCurrency)
+        .map(currency => {
+          const conversion = this.convertCurrency(currency);
+          return {
+            ...currency,
+            convertedValue: conversion.value,
+            rate: conversion.rate,
+            isHigher: conversion.rate > 1
+          };
+        });
+    },
+
+    /**
+     * Convert from selected currency to target currency
+     * Both values are in ARS (pesos), so we divide
+     */
+    convertCurrency(targetCurrency) {
+      const source = this.selectedCurrencyData;
+      if (!source || !targetCurrency) return { value: 0, rate: 0 };
+
+      // Convert: amount * (source rate in ARS) / (target rate in ARS)
+      // Using venta price for calculation
+      const sourceRate = source.venta;
+      const targetRate = targetCurrency.venta;
+
+      if (targetRate === 0) return { value: 0, rate: 0 };
+
+      const convertedValue = this.currenciesAmount * (sourceRate / targetRate);
+      const rate = sourceRate / targetRate;
+
+      return {
+        value: convertedValue,
+        rate: rate
+      };
+    },
+
+    /**
+     * Get currency flag emoji based on currency code
+     */
+    getCurrencyFlag(currencyCode) {
+      const flags = {
+        'ARS': '🇦🇷',
+        'USD': '🇺🇸',
+        'EUR': '🇪🇺',
+        'BRL': '🇧🇷',
+        'CLP': '🇨🇱',
+        'UYU': '🇺🇾',
+        'COP': '🇨🇴',
+        'MXN': '🇲🇽',
+        'PEN': '🇵🇪',
+        'GBP': '🇬🇧',
+        'CHF': '🇨🇭'
+      };
+      return flags[currencyCode] || '🌐';
+    },
+
+    // ==========================================
+    // Formatting (Utils wrappers)
     // ==========================================
 
     /**
